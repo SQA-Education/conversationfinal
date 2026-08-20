@@ -170,6 +170,7 @@ function submitToTeacher(){
         //   entry.301386877   → K  Writing text
         //   entry.1035810181  → L  Speaking transcript ('No speaking section in Final Test')
         //   entry.1451249480  → M  Teacher
+        try{fetch("https://ponilnhyehnzycspksah.supabase.co/functions/v1/submit-final",{method:"POST",headers:{"Content-Type":"application/json","apikey":"sb_publishable_YWM3O7i8aHWBGOZM-vAnEw_bR4XStKm","Authorization":"Bearer sb_publishable_YWM3O7i8aHWBGOZM-vAnEw_bR4XStKm"},body:JSON.stringify({name:submissionData.name,className:submissionData.className,level:"Conversation",session:16,writingText:(submissionData.writingText||""),speakingTranscript:"",scores:{reading:submissionData.reading,vocabulary:submissionData.vocab,writing:submissionData.writingScore,speaking:submissionData.speakingScore,grammar:submissionData.grammarScore,percent:submissionData.pct}})}).catch(function(){});}catch(e){}
         const fd=new FormData();
         fd.append('entry.154629934',submissionData.name);
         fd.append('entry.771629595',submissionData.className);
