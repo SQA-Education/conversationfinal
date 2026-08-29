@@ -247,5 +247,40 @@ function submitToTeacher(){
     trySubmit();
 }
 </script>
+<script>
+/* SQA speaking fallback (2026-08-29): iPhone/Safari can't do the browser voice-to-text,
+   so let students TYPE what they said. Additive + try/catch — never breaks existing flow.
+   Feeds the typed text into the page's own transcript vars/display AND guarantees it
+   reaches the portal submission (submit-final) even if a var is out of reach. */
+(function(){
+  if(window.__sqaSpeakType) return; window.__sqaSpeakType=true;
+  function box(){ return document.getElementById('transcript')||document.getElementById('transcriptBox')||document.getElementById('speakTranscriptText')||document.getElementById('speakTranscriptBox'); }
+  function inject(){
+    var b=box(); if(!b) return false;
+    if(document.getElementById('sqaTypeSpeak')) return true;
+    var w=document.createElement('div'); w.style.cssText='margin-top:12px';
+    w.innerHTML='<div style="font-size:13.5px;color:#8a5a1e;background:#fff5e9;border:1px solid #f3d5ad;border-radius:8px;padding:8px 10px;margin-bottom:6px">📱 On an iPhone and your words aren’t showing? <b>Type what you said</b> here instead:</div><textarea id="sqaTypeSpeak" placeholder="Type your spoken answer here…" style="width:100%;box-sizing:border-box;min-height:72px;border:1.5px solid #e0dcec;border-radius:10px;padding:10px;font:inherit;font-size:15px"></textarea>';
+    b.parentNode.insertBefore(w, b.nextSibling);
+    document.getElementById('sqaTypeSpeak').addEventListener('input',function(){
+      var v=this.value; window.__typedSpeech=v;
+      try{STATE.spokenText=v;}catch(e){} try{STATE.speakingText=v;}catch(e){} try{STATE.spoken=v;}catch(e){}
+      try{speakingTranscript=v;}catch(e){} try{spokenText=v;}catch(e){} try{speechTranscript=v;}catch(e){}
+      var d=box(); if(d){ if('value' in d) d.value=v; else d.textContent=v; }
+    });
+    return true;
+  }
+  if(!inject()){ document.addEventListener('DOMContentLoaded',inject); window.addEventListener('load',inject);
+    try{ var mo=new MutationObserver(function(){ if(inject()) mo.disconnect(); }); mo.observe(document.documentElement,{childList:true,subtree:true}); }catch(e){} }
+  var _f=window.fetch;
+  window.fetch=function(u,o){
+    try{ if(typeof u==='string'&&u.indexOf('submit-final')>-1&&o&&typeof o.body==='string'&&window.__typedSpeech){
+      var j=JSON.parse(o.body);
+      if(!j.speakingTranscript||!String(j.speakingTranscript).trim()){ j.speakingTranscript=window.__typedSpeech; o.body=JSON.stringify(j); }
+    }}catch(e){}
+    return _f.apply(this,arguments);
+  };
+})();
+</script>
+
 </body>
 </html>
