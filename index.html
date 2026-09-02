@@ -283,39 +283,45 @@ function submitToTeacher(){
 </script>
 
 <script>
-/* __sqaGate — SQA enrolled-only homework gate. Additive; fail-open on network error (the submit-final backend still enforces enrollment on save). */
+/* __sqaGate v2 — enrolled-only homework gate. Remembers verified students, never hangs
+   (fail-open on timeout/error — the submit-final backend still enforces enrollment on save),
+   and asks for the enrolled email once on a bare link. */
 (function(){
   try{
+    var KEY='sqa_enrolled_ok';
+    if(localStorage.getItem(KEY)==='1') return;
     var Q=new URLSearchParams(location.search);
     var sid=(Q.get('sid')||'').trim(), email=(Q.get('email')||'').trim();
     var FN="https://ponilnhyehnzycspksah.supabase.co/functions/v1/submit-final";
     var PUB="sb_publishable_YWM3O7i8aHWBGOZM-vAnEw_bR4XStKm";
-    var ov=document.createElement('div');
-    ov.id='sqa-gate';
+    var ov=document.createElement('div'); ov.id='sqa-gate';
     ov.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#5B5091;color:#fff;display:flex;align-items:center;justify-content:center;font-family:"Segoe UI",system-ui,sans-serif;padding:24px;box-sizing:border-box;text-align:center';
-    ov.innerHTML='<div style="max-width:460px;width:100%"><div style="font-size:2.4em">🔒</div><div id="sqa-gate-body" style="font-size:1.05em;line-height:1.55;margin-top:12px">Checking your enrollment…</div></div>';
+    ov.innerHTML='<div style="max-width:460px;width:100%"><div style="font-size:2.4em">🔒</div><div id="sqa-gate-body" style="font-size:1.05em;line-height:1.55;margin-top:12px">Checking…</div></div>';
     (document.body||document.documentElement).appendChild(ov);
-    function pass(){ try{ov.remove();}catch(_){ if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);} }
+    var done=false;
+    function pass(remember){ if(done)return; done=true; if(remember){try{localStorage.setItem(KEY,'1');}catch(_){}} try{ov.remove();}catch(_){ if(ov.parentNode)ov.parentNode.removeChild(ov);} }
     function verify(s,e){ return fetch(FN,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUB,'Authorization':'Bearer '+PUB},body:JSON.stringify({check:true,sid:s||'',email:e||''})}).then(function(r){return r.json();}); }
-    function block(name){
+    function askEmail(){
       var b=document.getElementById('sqa-gate-body');
-      b.innerHTML='<h2 style="margin:6px 0 10px">This homework is for enrolled students</h2>'+
-        '<p style="opacity:.95;margin-bottom:16px">'+(name?('Hi '+name+' — '):'')+'we could not find your enrollment for this term, so this homework won’t be saved to your teacher.</p>'+
-        '<p style="margin-bottom:6px">✅ Already enrolled? Open your homework from your <b>SQA portal</b> so we know it’s you:</p>'+
-        '<a href="https://sqa-portal-gray.vercel.app/" style="display:inline-block;margin:6px 0 16px;background:#fff;color:#5B5091;padding:11px 20px;border-radius:10px;text-decoration:none;font-weight:600">Open my portal</a>'+
-        '<div style="margin:10px 0 6px;opacity:.9;font-size:.95em">…or enter the email you enrolled with:</div>'+
-        '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><input id="sqa-gate-email" type="email" placeholder="your@email.com" style="padding:10px 12px;border-radius:9px;border:0;min-width:200px;font-size:15px"><button id="sqa-gate-go" style="padding:10px 18px;border-radius:9px;border:0;background:#F5A623;color:#fff;font-weight:600;cursor:pointer">Check</button></div>'+
-        '<div id="sqa-gate-note" style="margin-top:12px;font-size:.9em;opacity:.85">Not enrolled yet? Contact SQA on WhatsApp to join a class.</div>';
-      var go=document.getElementById('sqa-gate-go');
-      go.onclick=function(){
-        var em=(document.getElementById('sqa-gate-email').value||'').trim();
-        if(em.indexOf('@')<0){ document.getElementById('sqa-gate-note').textContent='Please enter a valid email.'; return; }
+      b.innerHTML='<h2 style="margin:6px 0 10px">One quick step 💜</h2>'+
+        '<p style="opacity:.95;margin-bottom:14px">To open your homework, type the email you enrolled with:</p>'+
+        '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><input id="sqa-gate-email" type="email" inputmode="email" autocomplete="email" placeholder="your@email.com" style="padding:12px 14px;border-radius:10px;border:0;min-width:220px;font-size:16px"><button id="sqa-gate-go" style="padding:12px 20px;border-radius:10px;border:0;background:#F5A623;color:#fff;font-weight:700;cursor:pointer;font-size:16px">Start</button></div>'+
+        '<div id="sqa-gate-note" style="margin-top:12px;font-size:.9em;opacity:.85">Tip: open homework from the SQA portal and this is automatic. Not enrolled yet? Message SQA on WhatsApp.</div>';
+      var inp=document.getElementById('sqa-gate-email'), go=document.getElementById('sqa-gate-go');
+      try{ inp.focus(); }catch(_){}
+      function go2(){
+        var em=(inp.value||'').trim();
+        if(em.indexOf('@')<1){ document.getElementById('sqa-gate-note').textContent='Please type a valid email.'; return; }
         go.textContent='Checking…'; go.disabled=true;
-        verify('',em).then(function(d){ if(d&&d.enrolled){ pass(); } else { go.textContent='Check'; go.disabled=false; document.getElementById('sqa-gate-note').textContent='That email isn’t enrolled this term. Please use the email you enrolled with, or contact SQA.'; } }).catch(function(){ pass(); });
-      };
+        var t2=setTimeout(function(){ pass(false); },7000);
+        verify('',em).then(function(d){ clearTimeout(t2); if(d&&d.enrolled){ pass(true); } else { go.textContent='Start'; go.disabled=false; document.getElementById('sqa-gate-note').textContent='That email isn’t enrolled this term. Use your enrolled email, or message SQA on WhatsApp.'; } }).catch(function(){ clearTimeout(t2); pass(false); });
+      }
+      go.onclick=go2;
+      inp.addEventListener('keydown',function(e){ if(e.key==='Enter') go2(); });
     }
-    if(!sid && !email){ block(''); return; }
-    verify(sid,email).then(function(d){ if(d&&d.enrolled) pass(); else block(d&&d.name||''); }).catch(function(){ pass(); });
+    if(!sid && !email){ askEmail(); return; }
+    var t=setTimeout(function(){ pass(false); },7000);
+    verify(sid,email).then(function(d){ clearTimeout(t); if(d&&d.enrolled) pass(true); else askEmail(); }).catch(function(){ clearTimeout(t); pass(false); });
   }catch(e){}
 })();
 </script>
