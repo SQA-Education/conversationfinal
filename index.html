@@ -325,5 +325,50 @@ function submitToTeacher(){
   }catch(e){}
 })();
 </script>
+<script>
+/* __sqaAutosave — saves homework progress to THIS device (survives internet drops,
+   reloads, coming back later on the same phone). Additive; wrapped in try/catch. */
+(function(){
+try{
+  var KEY='sqa_hw_'+location.pathname.replace(/[^a-z0-9]/gi,'');
+  var STARTS={start:1,s0:1};
+  var GRE=/answer|correct|score|item|question|writing|transcript|spoken|grammar|reading|vocab|shuffl|selected|name/i;
+  function activeSec(){var s=document.querySelector('.section.active');return s?s.id:'';}
+  function secs(){return Array.prototype.slice.call(document.querySelectorAll('.section[id]'));}
+  function fields(){return Array.prototype.slice.call(document.querySelectorAll('input,textarea,select'));}
+  function isResults(s){return /result|score/i.test(s)||s==='s5'||s==='s6';}
+  var t=null, ind=null;
+  function flash(){if(!ind){ind=document.createElement('div');ind.style.cssText='position:fixed;bottom:14px;right:14px;background:#1e9e5a;color:#fff;padding:7px 13px;border-radius:20px;font:600 13px system-ui;z-index:99998;opacity:0;transition:opacity .3s;box-shadow:0 3px 12px rgba(0,0,0,.2)';ind.textContent='✓ Saved';document.body.appendChild(ind);}ind.style.opacity='1';clearTimeout(ind._t);ind._t=setTimeout(function(){ind.style.opacity='0';},1200);}
+  function snap(){var st={sec:activeSec(),h:{},f:[],g:{},t:Date.now()};
+    secs().forEach(function(s){if(!STARTS[s.id]&&s.innerHTML.trim())st.h[s.id]=s.innerHTML;});
+    fields().forEach(function(el){st.f.push(el.value);});
+    try{Object.keys(window).forEach(function(k){if(!GRE.test(k))return;try{var v=window[k];if(typeof v==='function'||v===window||v===document||(v&&v.nodeType))return;JSON.stringify(v);st.g[k]=v;}catch(e){}});}catch(e){}
+    return st;}
+  function doSave(){try{var s=activeSec();if(!s||STARTS[s])return;if(isResults(s)){localStorage.removeItem(KEY);return;}localStorage.setItem(KEY,JSON.stringify(snap()));flash();}catch(e){}}
+  function sched(){clearTimeout(t);t=setTimeout(doSave,900);}
+  document.addEventListener('input',sched,true);
+  document.addEventListener('click',function(e){var x=e.target;if(x&&x.closest&&x.closest('.option,.btn,button,.word,.drop-target,[onclick]'))sched();},true);
+  setInterval(doSave,8000);
+  function goSection(id){try{if(typeof showSection==='function'){showSection(id);return;}}catch(e){}try{if(typeof goTo==='function'){goTo(id);return;}}catch(e){}document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});var tg=document.getElementById(id);if(tg)tg.classList.add('active');try{window.scrollTo(0,0);}catch(e){}}
+  window.addEventListener('load',function(){try{
+    var raw=localStorage.getItem(KEY);if(!raw)return;var st=JSON.parse(raw);
+    if(!st||!st.sec||STARTS[st.sec]||isResults(st.sec))return;
+    if(Date.now()-(st.t||0)>7*864e5){localStorage.removeItem(KEY);return;}
+    var bar=document.createElement('div');
+    bar.style.cssText='position:fixed;top:0;left:0;right:0;background:#5B5091;color:#fff;padding:12px 16px;text-align:center;z-index:99997;font:15px system-ui;box-shadow:0 2px 12px rgba(0,0,0,.25)';
+    bar.innerHTML='👋 Welcome back! We saved your homework. <button id="sqa-resume" style="margin:0 6px;background:#F5A623;color:#fff;border:0;padding:8px 16px;border-radius:8px;font-weight:700;cursor:pointer">Continue</button><button id="sqa-fresh" style="background:transparent;color:#fff;border:1px solid #fff;padding:8px 14px;border-radius:8px;cursor:pointer">Start fresh</button>';
+    document.body.appendChild(bar);
+    document.getElementById('sqa-fresh').onclick=function(){localStorage.removeItem(KEY);bar.remove();};
+    document.getElementById('sqa-resume').onclick=function(){try{
+      for(var k in st.g){try{window[k]=st.g[k];}catch(e){}}
+      for(var id in st.h){var el=document.getElementById(id);if(el)el.innerHTML=st.h[id];}
+      var fs=fields();(st.f||[]).forEach(function(v,i){if(fs[i]!==undefined){try{fs[i].value=v;}catch(e){}}});
+      var wc=document.getElementById('wc'),wr=document.getElementById('writing');if(wc&&wr)try{wc.textContent=wr.value.trim().split(/\s+/).filter(Boolean).length;}catch(e){}
+      goSection(st.sec);bar.remove();
+    }catch(e){bar.remove();}};
+  }catch(e){}});
+}catch(e){}
+})();
+</script>
 </body>
 </html>
