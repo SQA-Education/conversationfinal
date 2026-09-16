@@ -254,6 +254,7 @@ function submitToTeacher(){
    reaches the portal submission (submit-final) even if a var is out of reach. */
 (function(){
   if(window.__sqaSpeakType) return; window.__sqaSpeakType=true;
+  function enableSpeakContinue(){try{var tbx=document.getElementById('sqaTypeSpeak');var sec=(tbx&&tbx.closest)?tbx.closest('.section'):null;var scope=sec||document;Array.prototype.forEach.call(scope.querySelectorAll('button,a.btn,.btn'),function(bt){if(!(bt.disabled||bt.hasAttribute('disabled')))return;var t=(bt.textContent||'').toLowerCase(),oc=(bt.getAttribute('onclick')||'').toLowerCase();if(t.indexOf('continue')>-1||t.indexOf('finish')>-1||t.indexOf('submit')>-1||t.indexOf('next')>-1||oc.indexOf('speak')>-1||oc.indexOf('check')>-1){bt.disabled=false;bt.removeAttribute('disabled');}});}catch(e){}}
   function box(){ return document.getElementById('transcript')||document.getElementById('transcriptBox')||document.getElementById('speakTranscriptText')||document.getElementById('speakTranscriptBox'); }
   function inject(){
     var b=box(); if(!b) return false;
@@ -266,11 +267,13 @@ function submitToTeacher(){
       try{STATE.spokenText=v;}catch(e){} try{STATE.speakingText=v;}catch(e){} try{STATE.spoken=v;}catch(e){}
       try{speakingTranscript=v;}catch(e){} try{spokenText=v;}catch(e){} try{speechTranscript=v;}catch(e){}
       var d=box(); if(d){ if('value' in d) d.value=v; else d.textContent=v; }
+      enableSpeakContinue();
     });
     return true;
   }
   if(!inject()){ document.addEventListener('DOMContentLoaded',inject); window.addEventListener('load',inject);
     try{ var mo=new MutationObserver(function(){ if(inject()) mo.disconnect(); }); mo.observe(document.documentElement,{childList:true,subtree:true}); }catch(e){} }
+  setInterval(function(){try{var tbx=document.getElementById('sqaTypeSpeak');if(!tbx)return;var sec=tbx.closest?tbx.closest('.section'):null;if(sec&&/not-allowed|permission-denied|could not start|error:/i.test(sec.innerText||''))enableSpeakContinue();}catch(e){}},1500);
   var _f=window.fetch;
   window.fetch=function(u,o){
     try{ if(typeof u==='string'&&u.indexOf('submit-final')>-1&&o&&typeof o.body==='string'&&window.__typedSpeech){
