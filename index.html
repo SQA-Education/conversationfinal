@@ -373,5 +373,38 @@ try{
 }catch(e){}
 })();
 </script>
+<script>
+/* __sqaBrowserNudge — if the homework is opened INSIDE an in-app browser (WhatsApp/Instagram/
+   Facebook/etc.) where the mic + speech API are blocked, or speech recognition is unavailable,
+   show a friendly banner in the speaking section: open in Safari/Chrome, or type. Additive. */
+(function(){
+  if(window.__sqaBrowserNudge) return; window.__sqaBrowserNudge=true;
+  try{
+    var ua=navigator.userAgent||"";
+    var inApp=/(WhatsApp|Instagram|FBAN|FBAV|FB_IAB|Line\/|Snapchat|Messenger|TikTok|MicroMessenger|GSA)/i.test(ua);
+    var noSpeech=(typeof window.SpeechRecognition==="undefined" && typeof window.webkitSpeechRecognition==="undefined");
+    if(!inApp && !noSpeech) return;
+    function anchor(){
+      var el=document.getElementById("transcript")||document.getElementById("transcriptBox")||document.getElementById("speakTranscriptText")||document.getElementById("speakTranscriptBox")||document.getElementById("sqaTypeSpeak");
+      if(el) return el;
+      var bs=document.querySelectorAll("button,.btn,a.btn");
+      for(var i=0;i<bs.length;i++){var t=(bs[i].textContent||"").toLowerCase(),oc=(bs[i].getAttribute("onclick")||"").toLowerCase();
+        if(t.indexOf("speak")>-1||t.indexOf("record")>-1||oc.indexOf("togglerec")>-1||oc.indexOf("startrec")>-1||oc.indexOf("rec(")>-1) return bs[i];}
+      return null;
+    }
+    function inject(){
+      var a=anchor(); if(!a) return false;
+      if(document.getElementById("sqaBrowserNudge")) return true;
+      var d=document.createElement("div"); d.id="sqaBrowserNudge";
+      d.style.cssText="margin:10px 0;padding:12px 14px;border-radius:10px;background:#fff5e9;border:1px solid #f3c98b;color:#8a5a1e;font-size:14px;line-height:1.5";
+      d.innerHTML="📱 <b>To record your voice, open this in Safari or Chrome.</b><br>This page is open inside an app (like WhatsApp), which blocks the microphone. Tap the <b>•••</b> or <b>share</b> icon at the corner and choose <b>“Open in Safari”</b> (or Chrome) — then recording will work.<br>In a hurry? You can also just <b>type what you said</b> in the box below.";
+      a.parentNode.insertBefore(d, a);
+      return true;
+    }
+    if(!inject()){ document.addEventListener("DOMContentLoaded",inject); window.addEventListener("load",inject);
+      try{ var mo=new MutationObserver(function(){ if(inject()) mo.disconnect(); }); mo.observe(document.documentElement,{childList:true,subtree:true}); }catch(e){} }
+  }catch(e){}
+})();
+</script>
 </body>
 </html>
