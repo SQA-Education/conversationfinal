@@ -260,7 +260,7 @@ function submitToTeacher(){
     var b=box(); if(!b) return false;
     if(document.getElementById('sqaTypeSpeak')) return true;
     var w=document.createElement('div'); w.style.cssText='margin-top:12px';
-    w.innerHTML='<div style="font-size:13.5px;color:#8a5a1e;background:#fff5e9;border:1px solid #f3d5ad;border-radius:8px;padding:8px 10px;margin-bottom:6px">📱 On an iPhone and your words aren’t showing? <b>Type what you said</b> here instead:</div><textarea id="sqaTypeSpeak" placeholder="Type your spoken answer here…" style="width:100%;box-sizing:border-box;min-height:72px;border:1.5px solid #e0dcec;border-radius:10px;padding:10px;font:inherit;font-size:15px"></textarea>';
+    w.innerHTML='<div style="font-size:13.5px;color:#8a5a1e;background:#fff5e9;border:1px solid #f3d5ad;border-radius:8px;padding:8px 10px;margin-bottom:6px">🎤 Microphone not working, or your words aren’t showing? <b>Type what you said</b> here instead:</div><textarea id="sqaTypeSpeak" placeholder="Type your spoken answer here…" style="width:100%;box-sizing:border-box;min-height:72px;border:1.5px solid #e0dcec;border-radius:10px;padding:10px;font:inherit;font-size:15px"></textarea>';
     b.parentNode.insertBefore(w, b.nextSibling);
     document.getElementById('sqaTypeSpeak').addEventListener('input',function(){
       var v=this.value; window.__typedSpeech=v;
@@ -273,7 +273,7 @@ function submitToTeacher(){
   }
   if(!inject()){ document.addEventListener('DOMContentLoaded',inject); window.addEventListener('load',inject);
     try{ var mo=new MutationObserver(function(){ if(inject()) mo.disconnect(); }); mo.observe(document.documentElement,{childList:true,subtree:true}); }catch(e){} }
-  setInterval(function(){try{var tbx=document.getElementById('sqaTypeSpeak');if(!tbx)return;var sec=tbx.closest?tbx.closest('.section'):null;if(sec&&/not-allowed|permission-denied|could not start|error:/i.test(sec.innerText||''))enableSpeakContinue();}catch(e){}},1500);
+  setInterval(function(){try{var tbx=document.getElementById('sqaTypeSpeak');if(!tbx)return;var sec=tbx.closest?tbx.closest('.section'):null;if(sec&&/not-allowed|permission-denied|could not start|error:/i.test(sec.innerText||'')){enableSpeakContinue();if(/not-allowed|permission-denied/i.test(sec.innerText||'')&&!document.getElementById('sqaMicHelp')){var hp=document.createElement('div');hp.id='sqaMicHelp';hp.style.cssText='margin:10px 0;padding:10px 12px;border-radius:10px;background:#fdecea;border:1px solid #f3b7b0;color:#8a2a1e;font-size:14.5px;line-height:1.45';hp.innerHTML='🎤 <b>Your microphone is blocked.</b><br>Tap the icon next to the website address (🔒 or ⓘ) → <b>Permissions</b> → <b>Microphone</b> → <b>Allow</b>. Then tap the record button again.<br>Or <b>type your answer</b> in the box below.';tbx.parentNode.parentNode.insertBefore(hp,tbx.parentNode);tbx.style.borderColor='#e07a2e';}}}catch(e){}},1500);
   var _f=window.fetch;
   window.fetch=function(u,o){
     try{ if(typeof u==='string'&&u.indexOf('submit-final')>-1&&o&&typeof o.body==='string'&&window.__typedSpeech){
